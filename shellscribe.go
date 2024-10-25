@@ -2,33 +2,31 @@ package main
 
 import (
 	"fmt"
-	"io/fs"
 	"log"
-	"os"
+	"net/http"
 	"os/user"
 	"path/filepath"
-	"slices"
-	"time"
 
 	"github.com/nxadm/tail"
+	"github.com/tmkontra/shellscribe/internal/server"
+	"github.com/tmkontra/shellscribe/internal/service"
 )
-
-type LogFile struct {
-	Cmd            string
-	StartTimestamp time.Time
-	Output         string
-}
 
 func main() {
 	usr, _ := user.Current()
 	logdir := filepath.Join(usr.HomeDir, "mutter")
-	logs, err := getLogFiles(logdir)
+	c := &server.Config{logdir}
+	s := server.NewServer(c)
+	http.ListenAndServe("0.0.0.0:8888", s)
+}
+
+func main_old() {
+	usr, _ := user.Current()
+	logdir := filepath.Join(usr.HomeDir, "mutter")
+	logs, err := service.GetLogFiles(logdir)
 	if err != nil {
 		log.Fatal(err)
 	}
-	slices.SortFunc(logs, func(a LogFile, b LogFile) int {
-		return a.StartTimestamp.Compare(b.StartTimestamp)
-	})
 	for i, l := range logs {
 		fmt.Printf("%d: %s\n", i+1, l.Cmd)
 	}
@@ -39,38 +37,4 @@ func main() {
 	for line := range t.Lines {
 		fmt.Println(line.Text)
 	}
-}
-
-func getLogFiles(logdir string) ([]LogFile, error) {
-	logs := []LogFile{}
-	err := filepath.WalkDir(logdir, func(path string, d fs.DirEntry, err error) error {
-		if err != nil {
-			return err
-		}
-		if d.IsDir() {
-			if path == logdir {
-				return nil
-			}
-			dirPath := filepath.Join(logdir, d.Name())
-			dir := os.DirFS(dirPath)
-			log.Default().Print(dir)
-			f := LogFile{}
-			if cmdFile, err := fs.Stat(dir, "cmd"); err == nil {
-				f.StartTimestamp = cmdFile.ModTime()
-			}
-			if cmd, err := fs.ReadFile(dir, "cmd"); err == nil {
-				f.Cmd = string(cmd)
-			} else {
-				return err
-			}
-			if _, err := fs.Stat(dir, "output"); err == nil {
-				f.Output = filepath.Join(dirPath, "output")
-			} else {
-				return nil
-			}
-			logs = append(logs, f)
-		}
-		return nil
-	})
-	return logs, err
 }
