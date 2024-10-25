@@ -5,11 +5,14 @@ import (
 	"log"
 	"net/http"
 	"net/url"
+	"os"
+	"text/template"
 	"time"
 
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/chi/v5/middleware"
 	"github.com/go-chi/render"
+	"github.com/olivere/vite"
 	"github.com/tmkontra/shellscribe/internal/service"
 )
 
@@ -20,12 +23,23 @@ type Config struct {
 type Server struct {
 	config  *Config
 	service *service.Service
+	vite    *vite.Fragment
 }
 
 func NewServer(config *Config) *Server {
+	viteFragment, err := vite.HTMLFragment(vite.Config{
+		FS:        os.DirFS("web/dist"),
+		IsDev:     true,
+		ViteURL:   "http://localhost:5173", // optional: defaults to this
+		ViteEntry: "src/main.ts",           // reccomended as highly dependent on your app
+	})
+	if err != nil {
+		panic(err)
+	}
 	return &Server{
 		config:  config,
 		service: service.NewService(),
+		vite:    viteFragment,
 	}
 }
 
@@ -33,8 +47,11 @@ func (s *Server) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 	r := chi.NewRouter()
 	r.Use(middleware.Logger)
 	r.Use(render.SetContentType(render.ContentTypeJSON))
+	r.Get("/", s.WebHandler)
+	r.Handle("/src/assets/*", http.StripPrefix("/src/assets/", http.FileServerFS(os.DirFS("web/src/assets"))))
 	r.Get("/index", s.IndexHandler)
 	r.Get("/tail/{id}", s.TailHandler)
+	r.Handle("/*", http.FileServerFS(os.DirFS("web/public")))
 	r.ServeHTTP(w, req)
 }
 
@@ -102,5 +119,28 @@ func (s *Server) TailHandler(w http.ResponseWriter, r *http.Request) {
 			w.Write([]byte(line))
 			flusher.Flush()
 		}
+	}
+}
+
+const indexTemplate = `
+<head>
+    <meta charset="UTF-8" />
+    <title>My Go Application</title>
+    {{ .Vite.Tags }}
+</head>
+<body>
+	<div id="app"></div>
+</body>
+`
+
+func (s *Server) WebHandler(w http.ResponseWriter, r *http.Request) {
+	t := template.Must(template.New("name").Parse(indexTemplate))
+
+	pageData := map[string]interface{}{
+		"Vite": s.vite,
+	}
+
+	if err := t.Execute(w, pageData); err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
 	}
 }
