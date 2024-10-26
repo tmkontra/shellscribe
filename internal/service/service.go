@@ -29,8 +29,8 @@ func (s *Service) TailFile(path string) (func(chan string), error) {
 	if _, err := os.Stat(path); err != nil {
 		return nil, err
 	}
-	t, _ := tail.TailFile(path, tail.Config{Follow: true})
 	return func(c chan string) {
+		t, _ := tail.TailFile(path, tail.Config{Follow: true, Poll: true})
 		for line := range t.Lines {
 			c <- line.Text
 		}

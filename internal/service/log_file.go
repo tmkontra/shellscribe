@@ -32,6 +32,8 @@ func GetLogFiles(logdir string) ([]LogFile, error) {
 			if cmdFile, err := fs.Stat(dir, "cmd"); err == nil {
 				f.Id = dirPath
 				f.StartTimestamp = cmdFile.ModTime()
+			} else {
+				log.Default().Print(err)
 			}
 			if cmd, err := fs.ReadFile(dir, "cmd"); err == nil {
 				f.Cmd = string(cmd)
@@ -41,6 +43,7 @@ func GetLogFiles(logdir string) ([]LogFile, error) {
 			if _, err := fs.Stat(dir, "output"); err == nil {
 				f.Output = filepath.Join(dirPath, "output")
 			} else {
+				log.Default().Print(err)
 				return nil
 			}
 			logs = append(logs, f)

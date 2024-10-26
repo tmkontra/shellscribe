@@ -51,7 +51,6 @@ func (s *Server) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 	r.Handle("/src/assets/*", http.StripPrefix("/src/assets/", http.FileServerFS(os.DirFS("web/src/assets"))))
 	r.Get("/index", s.IndexHandler)
 	r.Get("/tail/{id}", s.TailHandler)
-	r.Handle("/*", http.FileServerFS(os.DirFS("web/public")))
 	r.ServeHTTP(w, req)
 }
 
@@ -72,6 +71,7 @@ func (s *Server) IndexHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	resp := IndexResponse{}
+	fmt.Printf("files: %d\n", len(files))
 	for _, file := range files {
 		resp.Logs = append(resp.Logs, LogFile{
 			Id:        url.PathEscape(file.Id),
@@ -116,7 +116,7 @@ func (s *Server) TailHandler(w http.ResponseWriter, r *http.Request) {
 			log.Printf("SSE client disconnected")
 			return
 		case line := <-c:
-			w.Write([]byte(line))
+			fmt.Fprintf(w, "data: %s\n\n", line)
 			flusher.Flush()
 		}
 	}
