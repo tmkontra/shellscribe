@@ -1,14 +1,3 @@
-<template>
-    <div class="flex flex-col w-2/3">
-        <div>
-            <h1>Logs: {{  props.selected?.Name }}</h1>
-        </div>
-        <pre class="break-words text-wrap overflow-wrap">
-            {{ state.logContent }}
-        </pre>
-    </div>
-</template> 
-
 <script setup lang="ts">
 import { onBeforeUnmount, reactive, watchEffect } from 'vue';
 import { Item } from '../api/types';
@@ -29,7 +18,6 @@ const state = reactive<{
 })
 
 watchEffect(() => {
-    console.log(props.selected)
     if (!props.selected) {
         return 
     }
@@ -37,7 +25,6 @@ watchEffect(() => {
         return
     }
     if (state.eventSource !== null) {
-        console.log("closing")
         state.eventSource.close()
     }
     state.logContent = ''
@@ -53,6 +40,12 @@ onBeforeUnmount(() => {
 })
 
 </script>
+
+<template>
+    <div class="text-left">
+        <pre class="break-words text-wrap overflow-wrap">{{ state.logContent }}</pre>
+    </div>
+</template> 
 
 <style scoped>
 

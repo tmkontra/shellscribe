@@ -16,9 +16,13 @@ const setSelected = (item: Item) => {
 </script>
 
 <template>
-  <div class="flex flex-row h-full">
+  <div class="grid grid-cols-3 h-full gap-4">
+    <div class="w-full">
     <Sidebar :set-selected="setSelected" />
+    </div>
+    <div class="col-span-2">
     <LogViewer :selected="state.selected" />
+    </div>
   </div>
 </template>
 
