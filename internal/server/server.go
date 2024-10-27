@@ -19,6 +19,14 @@ import (
 
 type Config struct {
 	Directory string
+	Port      int
+}
+
+func NewConfig(directory string, port int) *Config {
+	return &Config{
+		Directory: directory,
+		Port:      port,
+	}
 }
 
 type Server struct {

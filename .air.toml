@@ -5,7 +5,7 @@ tmp_dir = "tmp"
 [build]
   args_bin = []
   bin = "./tmp/shellscribe server"
-  cmd = "go build -o ./tmp/shellscribe ./cmd/main.go"
+  cmd = "go build -o ./tmp/shellscribe ./cmd/shellscribe.go"
   delay = 1000
   exclude_dir = ["assets", "tmp", "vendor", "testdata"]
   exclude_file = []
