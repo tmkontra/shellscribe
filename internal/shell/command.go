@@ -15,12 +15,8 @@ func (r SetupResult) OutputFile() string {
 	return filepath.Join(r.Directory, "output")
 }
 
-func SetupCommand(command string) (SetupResult, error) {
-	homeDir, err := os.UserHomeDir()
-	if err != nil {
-		return SetupResult{}, err
-	}
-	store := filepath.Join(homeDir, "mutter")
+func SetupCommand(config *Config, command string) (SetupResult, error) {
+	store := config.LogDir()
 	dest := filepath.Join(store, uuid.New().String())
 	if err := os.MkdirAll(dest, os.ModePerm); err != nil {
 		return SetupResult{}, err
