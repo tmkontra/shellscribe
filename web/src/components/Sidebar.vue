@@ -32,20 +32,22 @@ const setSelected = (item: Item) => {
 </script>
 
 <template>
-  <div class="flex flex-col">
-    <h1 class="text-3xl font-bold underline">shellscribe</h1>
-    <template v-for="f in state.files" v-bind:key="f.Id">
-      <div
-        class="flex flex-row justify-between py-3 rounded-md px-4" 
-        :class="f.Id === state?.selected?.Id ? 'bg-black' : ''" 
-        @click="setSelected(f)"
-      >
-        <p class="max-w-3/4 text-ellipsis"> 
-        {{ f.Name }}
-        </p>
-        <p>{{ new Date(f.CreatedAt).toLocaleString() }}</p>
-      </div>
-    </template>
+  <div class="overflow-scroll">
+    <h1 class="text-3xl my-4 font-bold underline">shellscribe</h1>
+    <div class="flex flex-col gap-4 px-4">
+      <template v-for="f in state.files" v-bind:key="f.Id">
+        <div
+          class="flex flex-row justify-between py-4 rounded-md px-4" 
+          :class="f.Id === state?.selected?.Id ? 'dark:bg-slate-900' : ''" 
+          @click="setSelected(f)"
+        >
+          <p class="max-w-3/4 text-ellipsis"> 
+          {{ f.Name }}
+          </p>
+          <p>{{ new Date(f.CreatedAt).toLocaleString() }}</p>
+        </div>
+      </template>
+    </div>
   </div>
 </template>
 

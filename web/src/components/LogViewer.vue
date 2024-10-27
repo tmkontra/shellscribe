@@ -31,6 +31,8 @@ watchEffect(() => {
     const source = new EventSource("/tail/" + props.selected?.Id);
     source.onmessage = (event) => {
         state.logContent = state.logContent + event.data + "\n"
+        const logView = document.getElementById("log-content");
+        logView?.scrollTo(0, logView.scrollHeight)
     };
     state.eventSource = source
 })
@@ -42,8 +44,12 @@ onBeforeUnmount(() => {
 </script>
 
 <template>
-    <div class="text-left">
-        <pre class="break-words text-wrap overflow-wrap">{{ state.logContent }}</pre>
+    <div class="col-span-2 h-full max-h-screen p-4">
+        <div class="flex flex-col h-full justify-center items-center">
+            <div class="h-full w-full dark:bg-stone-800 rounded-lg p-4">
+                <pre id="log-content" class="text-left break-words text-wrap h-full overflow-scroll">{{ state.logContent }}</pre>
+            </div>
+        </div>
     </div>
 </template> 
 
