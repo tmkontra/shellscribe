@@ -1,6 +1,8 @@
 package service
 
 import (
+	"context"
+	"log"
 	"os"
 	"slices"
 
@@ -20,19 +22,29 @@ func (s *Service) ListFiles(dir string) ([]LogFile, error) {
 		return nil, err
 	}
 	slices.SortFunc(files, func(a LogFile, b LogFile) int {
-		return a.StartTimestamp.Compare(b.StartTimestamp)
+		return -a.StartTimestamp.Compare(b.StartTimestamp)
 	})
 	return files, nil
 }
 
-func (s *Service) TailFile(path string) (func(chan string), error) {
+func (s *Service) TailFile(path string) (func(context.Context, chan string), error) {
 	if _, err := os.Stat(path); err != nil {
 		return nil, err
 	}
-	return func(c chan string) {
-		t, _ := tail.TailFile(path, tail.Config{Follow: true, Poll: true})
-		for line := range t.Lines {
-			c <- line.Text
+	return func(ctx context.Context, c chan string) {
+		t, err := tail.TailFile(path, tail.Config{Follow: true, Poll: true})
+		if err != nil {
+			log.Printf("tail error: %s\n", err)
+			close(c)
+		}
+		for {
+			select {
+			case <-ctx.Done():
+				close(c)
+				return
+			case line := <-t.Lines:
+				c <- line.Text
+			}
 		}
 	}, nil
 }

@@ -1,6 +1,7 @@
 package server
 
 import (
+	"context"
 	"fmt"
 	"log"
 	"net/http"
@@ -109,13 +110,20 @@ func (s *Server) TailHandler(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Cache-Control", "no-cache")
 	w.Header().Set("Connection", "keep-alive")
 	c := make(chan string)
-	go tail(c)
+	ctx, cancel := context.WithCancel(context.Background())
+	go tail(ctx, c)
 	for {
 		select {
 		case <-r.Context().Done():
 			log.Printf("SSE client disconnected")
+			cancel()
 			return
-		case line := <-c:
+		case line, ok := <-c:
+			if !ok {
+				log.Printf("tail channel closed")
+				cancel()
+				return
+			}
 			fmt.Fprintf(w, "data: %s\n\n", line)
 			flusher.Flush()
 		}
