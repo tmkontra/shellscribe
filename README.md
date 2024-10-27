@@ -12,7 +12,7 @@ requirements:
 git clone git@github.com:tmkontra/shellscribe.git ~/.shellscribe
 # install shellscribe binary
 # may need to export GOBIN=~/go/bin
-go install ~/.shellscribe/cmd/shellscribe.go
+cd ~/.shellscribe && go install ~/.shellscribe/cmd/shellscribe.go && cd -
 # add shellscribe-on/shellscribe-off commands to your shell
 echo "source ~/.shellscribe/bin/shellscribe-init.sh" >> ~/.profile
 
