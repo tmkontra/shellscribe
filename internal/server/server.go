@@ -3,6 +3,7 @@ package server
 import (
 	"context"
 	"fmt"
+	"io/fs"
 	"log"
 	"net/http"
 	"net/url"
@@ -18,14 +19,20 @@ import (
 )
 
 type Config struct {
-	Directory string
-	Port      int
+	Directory   string
+	Port        int
+	Environment string
+}
+
+func (c *Config) IsDev() bool {
+	return c.Environment != ""
 }
 
 func NewConfig(directory string, port int) *Config {
 	return &Config{
-		Directory: directory,
-		Port:      port,
+		Directory:   directory,
+		Port:        port,
+		Environment: os.Getenv("SHELLSCRIBE_ENV"),
 	}
 }
 
@@ -38,7 +45,7 @@ type Server struct {
 func NewServer(config *Config) *Server {
 	viteFragment, err := vite.HTMLFragment(vite.Config{
 		FS:        os.DirFS("web/dist"),
-		IsDev:     true,
+		IsDev:     config.IsDev(),
 		ViteURL:   "http://localhost:5173", // optional: defaults to this
 		ViteEntry: "src/main.ts",           // reccomended as highly dependent on your app
 	})
@@ -57,10 +64,18 @@ func (s *Server) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 	r.Use(middleware.Logger)
 	r.Use(render.SetContentType(render.ContentTypeJSON))
 	r.Get("/", s.WebHandler)
-	r.Handle("/src/assets/*", http.StripPrefix("/src/assets/", http.FileServerFS(os.DirFS("web/src/assets"))))
+	if s.config.IsDev() {
+		serverStaticFolder(r, "/src/assets/", os.DirFS("web/src/assets"))
+	} else {
+		serverStaticFolder(r, "/assets/", os.DirFS("web/dist/assets"))
+	}
 	r.Get("/index", s.IndexHandler)
 	r.Get("/tail/{id}", s.TailHandler)
 	r.ServeHTTP(w, req)
+}
+
+func serverStaticFolder(mux *chi.Mux, path string, fs fs.FS) {
+	mux.Handle(path+"*", http.StripPrefix(path, http.FileServerFS(fs)))
 }
 
 type LogFile struct {
